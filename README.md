@@ -9,5 +9,5 @@ Codigo que simula uma partida de UNO entre dois jogadores com 24 cartas. As cart
 ## Como usar
 
 O UNO funciona tanto no sistema Windows quanto em Linux.
-- Linux pode-se usar compilador da linguagem C gcc em uam IDE ou no terminal
+- Linux pode-se usar compilador da linguagem C gcc em um IDE ou no terminal
 - Windows qualquer compilador de C como [Dev-C++](https://www.dev-cpp.com/)
