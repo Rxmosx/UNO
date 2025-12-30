@@ -4,4 +4,4 @@ Codigo que simula uma partida de UNO entre dois jogadores com 24 cartas. As cart
 
 - Nesse código é implementada a estrutura de dados Pilha, Listas Encadeadas com conceitos de recursividade, manipulação de String e Alocação Dinâmica em C.
 
-![imagem-jogo](imagem.png)
+![imagem-jogo](jogo.png)
