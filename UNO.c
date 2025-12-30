@@ -259,74 +259,21 @@ Bara* embaralhar(Bara* c, int n, int total_cartas) {
 }
 
 
-void libera_memoria(Bara* c) { // Libera da memória as cartas no final do jogo
-    Bara* remove = NULL;
+void libera_memoria(Bara** c) { // Libera da memória as cartas no final do jogo
+    if (c == NULL || *c == NULL) return;
 
-    while (c) {
-        remove = c;
-        c = c->prox;
-        free(remove);
-    }
-}
+    Bara* atual = *c;
+    Bara* proximo = NULL;
 
-void distribui_cartas(Bara** c, Bara** j1, Bara** j2, Bara** desc) {
-    Bara* aux = NULL;
-    Bara* aux1 = NULL;
-    Bara* ant = NULL; 
-    int i;
-    
-    for (i = 0; i < 4; i++) {
-        aux = *c;
-
-        while (aux->prox) { // Navega até o final do baralho e armazena a penultima posição
-            ant = aux;
-            aux = aux->prox;
-        }
-
-        ant->prox = NULL; // Retira a última carta do baralho
-
-        if (*j1 == NULL) {
-            *j1 = aux; // Coloca a carta retirada do baralho na mão do jogador 1, se o jogador não tiver cartas 
-        } else {
-            aux1 = nav(*j1); // Navega até o final da mão do jogador e coloca a carta do baralho
-            aux1->prox = aux;
-        }
-
-        aux = *c;
-
-        while (aux->prox) {
-            ant = aux;
-            aux = aux->prox;
-        }
-
-        ant->prox = NULL;
-
-        if (*j2 == NULL) {
-            *j2 = aux;
-        } else {
-            aux1 = nav(*j2);
-            aux1->prox = aux;
-        }
-
-        aux = *c;
-
-        if (i == 3){ // Na última repetição do laço, coloca uma carta do baralho na mesa
-
-            while (aux->prox) {
-                ant = aux;
-                aux = aux->prox;
-            }
-
-            ant->prox = NULL;
-
-            if (*desc == NULL) {
-                *desc = aux;
-            } 
-        }
-       
+    while (atual) {
+        proximo = atual->prox;
+        free(atual);
+        atual = proximo;
     }
 
+    *c = NULL;
 }
+
 
 void empilhar(Bara** c, Bara* carta) {
     Bara* novo = NULL;
@@ -348,6 +295,83 @@ void empilhar(Bara** c, Bara* carta) {
     
 }
 
+
+void distribui_cartas(Bara** c, Bara** j1, Bara** j2, Bara** desc) {
+    Bara* aux = NULL;
+    Bara* aux1 = NULL;
+    Bara* ant = NULL; 
+    int i;
+    
+    for (i = 0; i < 4; i++) {
+        
+        if (c != NULL) {
+            aux = *c;
+            ant = NULL;
+        
+            while (aux->prox) { // Navega até o final do baralho e armazena a penultima posição
+                ant = aux;
+                aux = aux->prox;
+            }
+
+            if (ant == NULL) { 
+                *c = NULL; // Retira a última carta do baralho
+            } else {
+                ant->prox = NULL;
+            }
+
+            empilhar(j1, aux); // Coloca a carta retirada do baralho na mão do jogador 1
+        }
+
+        // if (*j1 == NULL) {
+        //     *j1 = aux; // Coloca a carta retirada do baralho na mão do jogador 1, se o jogador não tiver cartas 
+        // } else {
+        //     aux1 = nav(*j1); // Navega até o final da mão do jogador e coloca a carta do baralho
+        //     aux1->prox = aux;
+        // }
+
+
+        if (*c != NULL) {
+            aux = *c;
+            ant = NULL;
+        
+            while (aux->prox) { // Navega até o final do baralho e armazena a penultima posição
+                ant = aux;
+                aux = aux->prox;
+            }
+
+            if (ant == NULL) { 
+                *c = NULL; // Retira a última carta do baralho
+            } else {
+                ant->prox = NULL;
+            }
+
+            empilhar(j2, aux); // Coloca a carta retirada do baralho na mão do jogador 2
+        }
+        
+
+        if (i == 3 && *c != NULL){ // Na última repetição do laço, coloca uma carta do baralho na mesa
+            aux = *c;
+            ant = NULL;
+
+            while (aux->prox) {
+                ant = aux;
+                aux = aux->prox;
+            }
+
+            if (ant == NULL) {
+                *c = NULL;
+            } else {
+                ant->prox = NULL;
+            }
+
+            empilhar(desc, aux); // Coloca a carta retirada do baralho na mesa
+        }
+       
+    }
+
+}
+
+
 Bara* desempilhar(Bara** c, Bara* carta) {
     Bara* ant = NULL; 
     Bara* aux = *c;
@@ -363,10 +387,13 @@ Bara* desempilhar(Bara** c, Bara* carta) {
             aux = aux->prox;
         }
 
-        carta = aux;
-        ant->prox = NULL;
+        if (ant == NULL) {
+            *c = NULL;
+        } else {
+            ant->prox = NULL;
+        }
 
-        return carta;
+        return aux;
     }
 
     if ((*c)->prox == NULL && (*c)->id == carta->id) { // Se a lista tiver apenas uma elemento, trata adequadamente
@@ -380,16 +407,19 @@ Bara* desempilhar(Bara** c, Bara* carta) {
         aux = aux->prox;
     }
 
-    if (ant == NULL) { 
+    if (aux == NULL) { 
+        return NULL; // Caso a carta não seja encontrada
+    }
+
+    if (ant == NULL) {
         *c = aux->prox;
     } else {
         ant->prox = aux->prox;
     }
 
-    carta = aux;
-    carta->prox = NULL;
+    aux->prox = NULL; // Isola a carta retirada da mão do jogador
 
-    return carta;
+    return aux;
 }
 
 int verificaTamMao (Bara* l) {
@@ -402,14 +432,15 @@ int verificaTamMao (Bara* l) {
 }
 
 
-void aux_imprimeJogo(Bara* desc, int total_cartas) { // Imprime o menu do jogo
+void aux_imprimeJogo(Bara* desc, Bara* c, int total_cartas) { // Imprime o menu do jogo
     Bara* aux = NULL;
     printf("=============================\n");
     printf("=== SIMULACAO DO JOGO UNO ===\n");
     printf("=============================\n");
     printf("\n");
 
-    printf("Baralho: %d cartas\n", total_cartas);
+    printf("Baralho: %d cartas\n", total_cartas); // Mostra o total de cartas no baralho (cartas na mesa + cartas para comprar)
+    printf("Monte de compras: %d cartas\n", verificaTamMao(c)); // Mostra o total de cartas no baralho (cartas na mesa + cartas para comprar)
     printf("Carta na mesa: ");
     aux = nav(desc);
     imprime_Carta(desc);
@@ -459,7 +490,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
             id_jogadorAdversario = 1;
         }
 
-        aux_imprimeJogo(desc, total_cartas);
+        aux_imprimeJogo(desc, c, total_cartas);
 
 
         sleep_ms(1500);
@@ -472,7 +503,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
             limpar_tela();
         }
         limpar_tela();
-        aux_imprimeJogo(desc, total_cartas);
+        aux_imprimeJogo(desc, c, total_cartas);
 
         // Indica qual jogador joga
         printf("Vez do jogador %d\n\n", id_jogador);
@@ -498,7 +529,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
             if (strcmp(aux->cor, topo_desc->cor) == 0 || aux->num == topo_desc->num) { // Encontra e joga uma carta normal
 
 
-                aux_imprimeJogo(desc, total_cartas);
+                aux_imprimeJogo(desc, c, total_cartas);
 
 
                 aux_cartas = desempilhar(jogador_atual, aux);
@@ -511,7 +542,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
 
 
                 if (strcmp(aux_cartas->especial, "Reverso") == 0) { // Se a carta for Reverso, faz seu efeito
-                    aux_imprimeJogo(desc, total_cartas);
+                    aux_imprimeJogo(desc, c, total_cartas);
             
                     printf("Sentido alterado!\n");
                     controlador--;
@@ -523,7 +554,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
                         
 
                     if (verifica_Mais2adv(*jogador_adversario , aux_cartas) != NULL) { // Verifica se o adversário tem uma carta +2, se ele tiver ela é jogada e o jogador que jogou o primeiro +2 compra 4 cartas
-                        aux_imprimeJogo(desc, total_cartas);
+                        aux_imprimeJogo(desc, c, total_cartas);
 
 
                         aux_cartas = verifica_Mais2adv(*jogador_adversario , aux_cartas);
@@ -547,7 +578,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
 
                             
                     } else {
-                        aux_imprimeJogo(desc, total_cartas); // Se o adversário não tiver um +2, ele compra duas cartas
+                        aux_imprimeJogo(desc, c, total_cartas); // Se o adversário não tiver um +2, ele compra duas cartas
                         for (int i = 0; i < 2; i++) {
                                 
                             aux_cartas = desempilhar(&c, NULL);
@@ -578,18 +609,19 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
         if (aux == NULL) { // Se o laço não encontrou nenhuma carta jogável, jogador uma compra uma carta
 
             if (c == NULL) { // Verifica se ainda existem carta para serem compradas, se não o jogo termina e é dado como empate
-                aux_imprimeJogo(desc, total_cartas);
+                aux_imprimeJogo(desc, c, total_cartas);
 
                 printf("O monte de compras acabou! Nao ha mais cartas para comprar.\n");
                 sleep_ms(3000);
                     
-                libera_memoria(j1);
-                libera_memoria(j2);
+                libera_memoria(&j1);
+                libera_memoria(&j2);
+                libera_memoria(jogador_atual);
                 j1 = NULL;
                 j2 = NULL;
             }
 
-            aux_imprimeJogo(desc, total_cartas);
+            aux_imprimeJogo(desc, c, total_cartas);
 
             aux_cartas = desempilhar(&c, NULL);
             printf("Jogador %d comprou a carta: ", id_jogador);
@@ -617,7 +649,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
 
 
     if (j1 == NULL && j2 == NULL) { // Anuncia o empate ou anuncia o vencedor do jogo
-        aux_imprimeJogo(desc, total_cartas);
+        aux_imprimeJogo(desc, c, total_cartas);
 
         printf("Jogo terminado em empate!\n");
         printf("Enter para sair!");
@@ -626,7 +658,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
         sleep_ms(1500);
         return;
     } else if (j1 == NULL) {
-        aux_imprimeJogo(desc, total_cartas);
+        aux_imprimeJogo(desc, c, total_cartas);
 
         printf("Jogador 1 venceu!\n");
         printf("Enter para sair!");
@@ -635,7 +667,7 @@ void simulajogo(Bara* c, Bara* j1, Bara* j2, Bara* desc, int total_cartas, int c
         sleep_ms(1500);
         return;
     } else {
-        aux_imprimeJogo(desc, total_cartas);
+        aux_imprimeJogo(desc, c, total_cartas);
         printf("Jogador 2 venceu!\n");
         printf("Enter para sair!");
         getchar();
@@ -669,11 +701,11 @@ int main(){
     simulajogo(cartas, jogador1, jogador2, descarte, total_cartas, 0);
 
     
-    libera_memoria(cartas);
-    libera_memoria(jogador1);
-    libera_memoria(jogador2);
-    libera_memoria(descarte);
-    
+    libera_memoria(&cartas);
+    libera_memoria(&jogador1);
+    libera_memoria(&jogador2);
+    libera_memoria(&descarte);
+
 
 	return 0;
 }
